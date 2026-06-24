@@ -28,8 +28,15 @@ jobs:
         fi
         echo "✅ main.py found."
 
-    - name: Ensure icon exists
+    - name: Create required assets
       run: |
+        # Tạo wifi_printers.json rỗng nếu chưa có
+        if [ ! -f "wifi_printers.json" ]; then
+          echo '[]' > wifi_printers.json
+          echo "✅ Created wifi_printers.json"
+        fi
+        
+        # Tạo icon nếu chưa có
         if [ ! -f "icon.png" ]; then
           echo "⚠️ Warning: icon.png not found. Creating placeholder..."
           convert -size 512x512 xc:blue icon.png || echo "⚠️ ImageMagick not installed"
@@ -128,6 +135,7 @@ jobs:
 
         android.permissions = INTERNET,ACCESS_NETWORK_STATE,BLUETOOTH,BLUETOOTH_ADMIN,BLUETOOTH_CONNECT,BLUETOOTH_SCAN,ACCESS_FINE_LOCATION,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 
+        # Đã tạo file này ở bước trên
         android.add_assets = wifi_printers.json
 
         presplash.filename = %(source.dir)s/icon.png
@@ -159,7 +167,6 @@ jobs:
         EOF
         
         echo "📄 buildozer.spec created"
-        cat buildozer.spec
 
     - name: Clean previous builds
       run: |
@@ -190,6 +197,7 @@ jobs:
           ls -la bin/
         else
           echo "❌ No APK found!"
+          echo "📁 Checking build directory..."
           find ~/.buildozer -name "*.apk" 2>/dev/null || echo "No APK found"
           exit 1
         fi
@@ -207,14 +215,6 @@ jobs:
       with:
         name: build-logs
         path: build-logs/
-        retention-days: 7
-
-    - name: Upload buildozer spec
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: buildozer-spec
-        path: buildozer.spec
         retention-days: 7
 
     - name: Notify result
